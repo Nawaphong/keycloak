@@ -59,21 +59,21 @@ import java.util.List;
  */
 public class OIDCLoginProtocolService {
 
-    private RealmModel realm;
-    private TokenManager tokenManager;
-    private EventBuilder event;
+    protected RealmModel realm;
+    protected TokenManager tokenManager;
+    protected EventBuilder event;
 
     @Context
-    private UriInfo uriInfo;
+    protected UriInfo uriInfo;
 
     @Context
-    private KeycloakSession session;
+    protected KeycloakSession session;
 
     @Context
-    private HttpHeaders headers;
+    protected HttpHeaders headers;
 
     @Context
-    private HttpRequest request;
+    protected HttpRequest request;
 
     public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
         this.realm = realm;

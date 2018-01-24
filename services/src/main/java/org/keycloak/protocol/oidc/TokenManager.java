@@ -121,6 +121,45 @@ public class TokenManager {
         }
     }
 
+    public String getRequiredOAuthScope(KeycloakSession session, RealmModel realm, AccessToken token) {
+        UserSessionModel userSession = null;
+        boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType());
+
+        ClientModel client = extractClient(realm, token);
+        if (client == null) return null;
+
+        if (offline) {
+
+            UserSessionManager sessionManager = new UserSessionManager(session);
+            userSession = sessionManager.findOfflineUserSession(realm, token.getSessionState());
+        } else {
+            // Find userSession regularly for online tokens
+            userSession = session.sessions().getUserSession(realm, token.getSessionState());
+        }
+
+        AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+
+        // Can theoretically happen in cross-dc environment. Try to see if userSession with our client is available in remoteCache
+        if (clientSession == null) {
+            userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSession.getId(), offline, client.getId());
+            if (userSession != null) {
+                clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
+            }
+        }
+        if (clientSession != null) {
+            return clientSession.getNote(OAuth2Constants.SCOPE);
+        }
+        return null;
+    }
+
+    public ClientModel extractClient(RealmModel realm, AccessToken token) {
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+            return null;
+        }
+        return client;
+    }
+
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, AccessToken oldToken, HttpHeaders headers) throws OAuthErrorException {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
@@ -220,6 +259,25 @@ public class TokenManager {
         }
 
         return false;
+    }
+
+    public UserModel extractUser(KeycloakSession session, RealmModel realm, AccessToken token) {
+        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
+        if (client == null || !client.isEnabled() || token.getIssuedAt() < client.getNotBefore()) {
+            return null;
+        }
+
+        UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+        if (AuthenticationManager.isSessionValid(realm, userSession)) {
+            return userSession.getUser();
+        }
+
+        userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), true, client.getId());
+        if (AuthenticationManager.isOfflineSessionValid(realm, userSession)) {
+            return userSession.getUser();
+        }
+        return null;
+
     }
 
     private boolean isUserValid(KeycloakSession session, RealmModel realm, AccessToken token, UserSessionModel userSession) {
