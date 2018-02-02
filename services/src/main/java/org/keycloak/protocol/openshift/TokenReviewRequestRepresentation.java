@@ -36,6 +36,12 @@ import java.util.Map;
  * @version $Revision: 1 $
  */
 public class TokenReviewRequestRepresentation implements Serializable {
+    public static TokenReviewRequestRepresentation create(String token) {
+        TokenReviewRequestRepresentation rep = new TokenReviewRequestRepresentation();
+        rep.setSpec(new Spec());
+        rep.getSpec().setToken(token);
+        return rep;
+    }
     @JsonProperty("apiVersion")
     protected String apiVersion = "authentication.k8s.io/v1beta1";
     @JsonProperty("kind")
