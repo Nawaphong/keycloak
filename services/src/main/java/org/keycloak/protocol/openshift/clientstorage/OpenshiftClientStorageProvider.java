@@ -20,6 +20,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
+import org.keycloak.protocol.openshift.connections.rest.api.v1.ServiceAccounts;
 import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientLookupProvider;
@@ -27,19 +28,25 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import javax.ws.rs.NotFoundException;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftOAuthClientStorageProvider implements ClientStorageProvider, ClientLookupProvider {
+public class OpenshiftClientStorageProvider implements ClientStorageProvider, ClientLookupProvider {
     protected KeycloakSession session;
     protected OpenshiftClientStorageModel component;
     protected OpenshiftClient openshiftClient;
 
-    public OpenshiftOAuthClientStorageProvider(KeycloakSession session, ClientStorageProviderModel component) {
+    public OpenshiftClientStorageProvider(KeycloakSession session, ClientStorageProviderModel component) {
         this.session = session;
         this.component = new OpenshiftClientStorageModel(component);
+    }
+
+    public OpenshiftClientStorageModel getComponent() {
+        return component;
     }
 
     @Override
@@ -54,6 +61,11 @@ public class OpenshiftOAuthClientStorageProvider implements ClientStorageProvide
 
     }
 
+    public OpenshiftClient getOpenshiftClient() {
+        initClient();
+        return openshiftClient;
+    }
+
     @Override
     public ClientModel getClientById(String id, RealmModel realm) {
         StorageId storageId = new StorageId(id);
@@ -65,14 +77,27 @@ public class OpenshiftOAuthClientStorageProvider implements ClientStorageProvide
     @Override
     public ClientModel getClientByClientId(String clientId, RealmModel realm) {
         initClient();
-        OAuthClients.OAuthClientRepresentation client = null;
-        try {
-            client = openshiftClient.apis().oauth().clients().get(clientId);
-            return new OpenshiftOAuthClientAdapter(session, realm, component, client);
-        } catch (NotFoundException nfe) {
-            return null;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        clientId = clientId.trim();
+        Matcher matcher = OpenshiftSAClientAdapter.SERVICE_ACCOUNT_PATTERN.matcher(clientId);
+        if (matcher.matches()) {
+            String namespace = matcher.group(1);
+            String name = matcher.group(2);
+            try {
+                ServiceAccounts.ServiceAccountRepresentation rep = openshiftClient.api().namespace(namespace).serviceAccounts().get(name);
+                return new OpenshiftSAClientAdapter(session, realm, clientId, rep, this);
+            } catch (NotFoundException nfe) {
+                if (nfe.getResponse() != null) nfe.getResponse().close();
+                return null;
+            }
+        } else {
+            OAuthClients.OAuthClientRepresentation client = null;
+            try {
+                client = openshiftClient.apis().oauth().clients().get(clientId);
+                return new OpenshiftOAuthClientAdapter(session, realm, component, client);
+            } catch (NotFoundException nfe) {
+                if (nfe.getResponse() != null) nfe.getResponse().close();
+                return null;
+            }
         }
     }
 }

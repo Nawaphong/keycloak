@@ -36,25 +36,25 @@ public class OpenshiftClientStorageModel extends ClientStorageProviderModel {
 
     public String getToken() {
         if (token == null) {
-            token = getConfig().getFirst(OpenshiftOAuthClientStorageProviderFactory.ACCESS_TOKEN);
+            token = getConfig().getFirst(OpenshiftClientStorageProviderFactory.ACCESS_TOKEN);
         }
         return token;
     }
 
     public void setToken(String token) {
         this.token = token;
-        getConfig().putSingle(OpenshiftOAuthClientStorageProviderFactory.ACCESS_TOKEN, token);
+        getConfig().putSingle(OpenshiftClientStorageProviderFactory.ACCESS_TOKEN, token);
     }
 
     public String getOpenshiftUri() {
         if (openshiftUri == null) {
-            openshiftUri = getConfig().getFirst(OpenshiftOAuthClientStorageProviderFactory.OPENSHIFT_URI);
+            openshiftUri = getConfig().getFirst(OpenshiftClientStorageProviderFactory.OPENSHIFT_URI);
         }
         return openshiftUri;
     }
 
     public void setOpenshiftUri(String openshiftUri) {
         this.openshiftUri = openshiftUri;
-        getConfig().putSingle(OpenshiftOAuthClientStorageProviderFactory.OPENSHIFT_URI, openshiftUri);
+        getConfig().putSingle(OpenshiftClientStorageProviderFactory.OPENSHIFT_URI, openshiftUri);
     }
 }

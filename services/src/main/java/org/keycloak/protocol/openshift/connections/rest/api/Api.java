@@ -16,15 +16,17 @@
  */
 package org.keycloak.protocol.openshift.connections.rest.api;
 
-import org.keycloak.protocol.openshift.connections.rest.api.v1.V1;
+import org.keycloak.protocol.openshift.connections.rest.api.v1.Namespace;
 
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public interface Api {
-    @Path("v1")
-    V1 v1();
+    @Path("v1/namespaces/{namespace}")
+    Namespace namespace(@PathParam("namespace") String namespace);
+
 }

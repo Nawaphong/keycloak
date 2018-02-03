@@ -18,6 +18,7 @@ package org.keycloak.protocol.openshift.connections.rest.api.v1;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.common.util.Base64;
 import org.keycloak.protocol.openshift.connections.rest.BaseRepresentation;
 import org.keycloak.protocol.openshift.connections.rest.MetadataRepresentation;
 
@@ -28,8 +29,10 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -68,7 +71,13 @@ public interface Secrets {
            if (data == null) return null;
            Map<String, Object> dataMap = (Map<String, Object>)data;
            Object token = dataMap.get("token");
-           return token == null ? null : (String)token;
+           if (token == null) return null;
+           try {
+               byte[] decoded = Base64.decode((String)token);
+               return new String(decoded, "UTF-8");
+           } catch (IOException e) {
+               throw new RuntimeException(e);
+           }
        }
 
    }
@@ -77,5 +86,10 @@ public interface Secrets {
     @Path("{secret}")
     @Produces(MediaType.APPLICATION_JSON)
     public SecretRepresentation get(@PathParam("secret") String secret);
+
+    @GET
+    @Path("{secret}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getPretty(@PathParam("secret") String secret, @QueryParam("pretty") boolean pretty);
 
 }

@@ -31,6 +31,8 @@ import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -46,7 +48,16 @@ public class OpenshiftClientTest {
     public void testServiceAccount() throws Exception {
 
         OpenshiftClient client = OpenshiftClient.instance(BASE_URL, MASTER_TOKEN);
-        Namespace myproject = client.api().v1().namespace("myproject");
+        Namespace myproject = client.api().namespace("myproject");
+
+        // test not found
+        try {
+            myproject.serviceAccounts().get("notfound");
+            Assert.fail();
+        } catch (NotFoundException e) {
+           if (e.getResponse() != null) e.getResponse().close();
+        }
+
         Response response = myproject.serviceAccounts().delete("sa-oauth");
         response.close();
         ServiceAccounts.ServiceAccountRepresentation rep = new ServiceAccounts.ServiceAccountRepresentation();

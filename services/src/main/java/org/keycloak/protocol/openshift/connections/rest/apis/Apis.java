@@ -28,20 +28,10 @@ import javax.ws.rs.PathParam;
  * @version $Revision: 1 $
  */
 public interface Apis {
-    @Path("authentication.k8s.io/{version}")
-    KubernetesAuthentication kubernetesAuthentication(@PathParam("version") String version);
 
     @Path("authentication.k8s.io/v1beta1")
     KubernetesAuthentication kubernetesAuthentication();
 
-    @Path("oauth.openshift.io/{version}")
-    OpenshiftOAuth oauth(@PathParam("version") String version);
-
-    /**
-     * current oauth
-     *
-     * @return
-     */
     @Path("oauth.openshift.io/v1")
     OpenshiftOAuth oauth();
 

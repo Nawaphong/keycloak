@@ -43,6 +43,18 @@ public class TokenReviewResponseRepresentation implements Serializable {
         @JsonProperty("authenticated")
         protected boolean authenticated;
 
+        protected Map<String, Object> otherClaims = new HashMap<>();
+
+        @JsonAnyGetter
+        public Map<String, Object> getOtherClaims() {
+            return otherClaims;
+        }
+
+        @JsonAnySetter
+        public void setOtherClaims(String name, Object value) {
+            otherClaims.put(name, value);
+        }
+
         public static class User implements Serializable {
             @JsonProperty("username")
             protected String username;

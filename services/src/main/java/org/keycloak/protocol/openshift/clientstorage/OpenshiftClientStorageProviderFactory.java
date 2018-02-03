@@ -34,10 +34,10 @@ import static org.keycloak.storage.CacheableStorageProviderModel.CACHE_POLICY;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftOAuthClientStorageProviderFactory implements ClientStorageProviderFactory<OpenshiftOAuthClientStorageProvider> {
+public class OpenshiftClientStorageProviderFactory implements ClientStorageProviderFactory<OpenshiftClientStorageProvider> {
     @Override
-    public OpenshiftOAuthClientStorageProvider create(KeycloakSession session, ComponentModel model) {
-        return new OpenshiftOAuthClientStorageProvider(session, new ClientStorageProviderModel(model));
+    public OpenshiftClientStorageProvider create(KeycloakSession session, ComponentModel model) {
+        return new OpenshiftClientStorageProvider(session, new ClientStorageProviderModel(model));
     }
 
 
