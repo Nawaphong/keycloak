@@ -20,7 +20,6 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
-import org.keycloak.protocol.openshift.TokenReviewResponseRepresentation;
 import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
 import org.keycloak.protocol.openshift.connections.rest.api.v1.Namespace;
 import org.keycloak.protocol.openshift.connections.rest.api.v1.Secrets;
@@ -29,10 +28,6 @@ import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -41,13 +36,10 @@ import java.util.regex.Pattern;
 @Ignore
 public class OpenshiftClientTest {
 
-    public static final String BASE_URL = "https://192.168.64.2:8443";
-    public static final String MASTER_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJteXByb2plY3QiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tbjc3MjkiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxODI5YjcxNi0wNzY5LTExZTgtOTI0NS01ZWQ0ODZlZDdkYzEiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bXlwcm9qZWN0OmtleWNsb2FrIn0.gGDHWIob4HNEbj57s_4Lm_2XCMp5DRSvUEafqfzohrcXLfoN-XMACkuwebn6EghfTB_9ITrkzhJSd3T0BbKO7l0dYchW4dRIMtz5SZs7y097Bxcl9bkPQG3wC-TkcqWgCV9PdE-dzdm8qb5c1lHd1QFBkCnX0slZ1kQd0tUIvoAf7if47YCgzvmMfsAXr88fzEZ_eMjimgTvzyudPvfsNnfQ_-0mr_dQMfVJXpFDrMSL2Fec8fxhktKgCGLdOX5d_2sqEfy1G_vAwnA2NV6CcLFailoTLoQztyvZDpsuLkMo6b3UV1sqFGwCUXkzGFnzr5yV27q4-zC-vsalSQmYPA";
-
     @Test
     public void testServiceAccount() throws Exception {
 
-        OpenshiftClient client = OpenshiftClient.instance(BASE_URL, MASTER_TOKEN);
+        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
         Namespace myproject = client.api().namespace("myproject");
 
         // test not found
@@ -103,19 +95,19 @@ public class OpenshiftClientTest {
 
     @Test
     public void testTokenReview() throws Exception {
-        OpenshiftClient client = OpenshiftClient.instance(BASE_URL, MASTER_TOKEN);
-        TokenReviewRequestRepresentation request = TokenReviewRequestRepresentation.create(MASTER_TOKEN);
+        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        TokenReviewRequestRepresentation request = TokenReviewRequestRepresentation.create(AbstractOpenshiftBaseTest.MASTER_TOKEN);
 
         //TokenReviewResponseRepresentation review = client.apis().kubernetesAuthentication("v1beta1").tokenReview().review(request);
         Response response = client.apis().kubernetesAuthentication().tokenReview().review(request);
         String data = response.readEntity(String.class);
-        System.out.println(data);
+        //System.out.println(data);
 
 
     }
     @Test
     public void testOAuthClients() throws Exception {
-        OpenshiftClient client = OpenshiftClient.instance(BASE_URL, MASTER_TOKEN);
+        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
 
         OAuthClients.OAuthClientRepresentation rep = OAuthClients.OAuthClientRepresentation.create();
         // with literal scope restriction

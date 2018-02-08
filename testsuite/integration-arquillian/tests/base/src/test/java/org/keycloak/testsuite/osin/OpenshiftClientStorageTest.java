@@ -25,23 +25,15 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.protocol.openshift.OpenshiftProtocolEndpoint;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
-import org.keycloak.protocol.openshift.TokenReviewResponseRepresentation;
-import org.keycloak.protocol.openshift.clientstorage.OpenshiftClientStorageProviderFactory;
 import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
 import org.keycloak.protocol.openshift.connections.rest.api.v1.Secrets;
 import org.keycloak.protocol.openshift.connections.rest.api.v1.ServiceAccounts;
 import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.storage.client.ClientStorageProvider;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
@@ -53,9 +45,6 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -64,7 +53,7 @@ import static org.junit.Assert.assertEquals;
  * @version $Revision: 1 $
  */
 @Ignore
-public class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
+public class OpenshiftClientStorageTest extends AbstractOpenshiftBaseTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -80,35 +69,12 @@ public class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
                 .addPackages(true, "org.keycloak.testsuite");
     }
 
-    protected String addComponent(ComponentRepresentation component) {
-        Response resp = adminClient.realm("test").components().add(component);
-        resp.close();
-        String id = ApiUtil.getCreatedId(resp);
-        getCleanup().addComponentId(id);
-        return id;
-    }
-
-    @Before
-    public void addProvidersBeforeTest() throws URISyntaxException, IOException {
-        List<ComponentRepresentation> reps = adminClient.realm("test").components().query(null, ClientStorageProvider.class.getName());
-        if (reps.size() > 0) return;
-        ComponentRepresentation provider = new ComponentRepresentation();
-        provider.setName("openshift oauth client provider");
-        provider.setProviderId(OpenshiftClientStorageProviderFactory.PROVIDER_ID);
-        provider.setProviderType(ClientStorageProvider.class.getName());
-        provider.setConfig(new MultivaluedHashMap<>());
-        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.ACCESS_TOKEN, OpenshiftClientTest.MASTER_TOKEN);
-        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.OPENSHIFT_URI, OpenshiftClientTest.BASE_URL);
-
-        addComponent(provider);
-    }
-
     protected String sa_token;
 
     @Before
     public void createClients() throws Exception {
         if (sa_token != null) return;
-        OpenshiftClient client = OpenshiftClient.instance(OpenshiftClientTest.BASE_URL, OpenshiftClientTest.MASTER_TOKEN);
+        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
 
         OAuthClients.OAuthClientRepresentation rep = OAuthClients.OAuthClientRepresentation.create();
         // with literal scope restriction
@@ -143,7 +109,7 @@ public class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
             Secrets.SecretRepresentation secretRep = client.api().namespace("myproject").secrets().get(secret);
             if (secretRep.isServiceAccountToken()) {
                 sa_token = secretRep.getToken();
-                System.out.println(client.api().namespace("myproject").secrets().getPretty(secret, true));
+                //System.out.println(client.api().namespace("myproject").secrets().getPretty(secret, true));
                 break;
             }
         }
@@ -151,7 +117,7 @@ public class OpenshiftClientStorageTest extends AbstractTestRealmKeycloakTest {
 
         TokenReviewRequestRepresentation request = TokenReviewRequestRepresentation.create(sa_token);
         String response = client.apis().kubernetesAuthentication().tokenReview().reviewPretty(request, true);
-        System.out.println(response);
+        //System.out.println(response);
 
 
         client.close();

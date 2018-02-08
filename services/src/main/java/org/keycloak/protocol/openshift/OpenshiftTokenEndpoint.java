@@ -22,11 +22,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
+import org.keycloak.protocol.openshift.clientstorage.OpenshiftClientModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 
@@ -38,6 +40,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.PublicKey;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -47,10 +51,6 @@ import java.util.Set;
 public class OpenshiftTokenEndpoint extends TokenEndpoint {
     public OpenshiftTokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         super(tokenManager, realm, event);
-    }
-
-    protected boolean isValidOpenshiftScope(String scope) {
-        return true;
     }
 
     @Path("token-review")
@@ -73,7 +73,7 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
             if (publicKey == null) {
                 event.detail(Details.REASON, "invalid public key");
                 event.error(Errors.INVALID_TOKEN);
-                return Response.status(401).entity(TokenReviewResponseRepresentation.error()).type(MediaType.APPLICATION_JSON_TYPE).build();
+                return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid token")).type(MediaType.APPLICATION_JSON_TYPE).build();
             } else {
                 verifier.publicKey(publicKey);
                 verifier.verify();
@@ -82,17 +82,40 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
         } catch (VerificationException e) {
             event.detail(Details.REASON, "token verification failure");
             event.error(Errors.INVALID_TOKEN);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error()).type(MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid token")).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
 
         if (!tokenManager.isTokenValid(session, realm, toIntrospect)) {
             event.detail(Details.REASON, "stale token");
             event.error(Errors.INVALID_TOKEN);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error()).type(MediaType.APPLICATION_JSON_TYPE).build();
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid token")).type(MediaType.APPLICATION_JSON_TYPE).build();
         }
 
 
         UserModel user = tokenManager.extractUser(session, realm, toIntrospect);
+
+        if (toIntrospect.getAudience() == null || toIntrospect.getAudience().length == 0) {
+            event.detail(Details.REASON, "token audience is missing");
+            event.error(Errors.INVALID_CLIENT);
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
+
+        }
+
+        ClientModel client = session.realms().getClientByClientId(toIntrospect.getAudience()[0], realm);
+
+        if (client == null) {
+            event.detail(Details.REASON, "invalid audience");
+            event.error(Errors.INVALID_CLIENT);
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
+
+        }
+
+        if (!(client instanceof OpenshiftClientModel)) {
+            event.detail(Details.REASON, "openshift clients allowed only");
+            event.error(Errors.INVALID_CLIENT);
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
+        }
+
 
         TokenReviewResponseRepresentation success = TokenReviewResponseRepresentation.success();
         TokenReviewResponseRepresentation.Status.User userRep = success.getStatus().getUser();
@@ -100,13 +123,22 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
         userRep.setUsername(user.getUsername());
 
         String scopeParam = tokenManager.getRequiredOAuthScope(session, realm, toIntrospect);
-        Set<String> scopes = new HashSet<>();
+        List<String> scopes = new LinkedList<>();
         if (scopeParam != null) {
             for (String scope : scopeParam.split("\\s+")) {
-                if (isValidOpenshiftScope(scope)) scopes.add(scope);
+                scopes.add(scope);
             }
         }
-        userRep.putExtra("scopes.authorization.openshift.io", scopes);
+        Set<String> failedScopes = ((OpenshiftClientModel)client).validateRequestedScope(scopes);
+        if (failedScopes != null && !failedScopes.isEmpty()) {
+            StringBuilder builder = new StringBuilder();
+            for (String failed : failedScopes) builder.append(" ").append(failed);
+            event.detail(Details.REASON, builder.toString());
+            event.error(Errors.INVALID_SCOPE);
+            return Response.status(401).entity(TokenReviewResponseRepresentation.error(Errors.INVALID_SCOPE)).type(MediaType.APPLICATION_JSON_TYPE).build();
+
+        }
+        if (!scopes.isEmpty()) userRep.putExtra("scopes.authorization.openshift.io", scopes);
 
         // todo should scope this information to avoid leaking info
         // should only display what is allowed for client

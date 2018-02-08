@@ -28,14 +28,19 @@ import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+
+import static org.keycloak.protocol.openshift.clientstorage.OpenshiftSAClientAdapter.ROLE_SCOPE_PATTERN;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAdapter {
+public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAdapter implements OpenshiftClientModel {
     protected OAuthClients.OAuthClientRepresentation client;
 
     public OpenshiftOAuthClientAdapter(KeycloakSession session, RealmModel realm, ClientStorageProviderModel component, OAuthClients.OAuthClientRepresentation client) {
@@ -237,4 +242,39 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
     public boolean hasScope(RoleModel role) {
         return false;
     }
+
+    @Override
+    public Set<String> validateRequestedScope(List<String> requestedScopes) {
+        Set<String> failed = new HashSet<>();
+        for (String requested : requestedScopes) {
+            if (client.getLiteralScopeRestrictions() != null && client.getLiteralScopeRestrictions().contains(requested)) continue;
+            if (client.getClusterRoleRestrictions() == null || client.getClusterRoleRestrictions().isEmpty()) {
+                failed.add(requested);
+                continue;
+            }
+            Matcher m = ROLE_SCOPE_PATTERN.matcher(requested);
+            if (!m.matches()) {
+                failed.add(requested);
+                continue;
+            }
+            boolean found = false;
+            String role = m.group(1);
+            String namespace = m.group(2);
+            String escalationString = m.group(3);
+            boolean escalation = escalationString != null && escalationString.trim().equals(":!");
+            for (OAuthClients.OAuthClientRepresentation.ClusterRoleRestriction restriction : client.getClusterRoleRestrictions()) {
+                if (restriction.getNamespaces().contains("*") || restriction.getNamespaces().contains(namespace)) {
+                    if (restriction.getRoleNames().contains("*") || restriction.getRoleNames().contains(role)) {
+                        if (!escalation || restriction.isAllowEscalation()) {
+                            found = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (!found) failed.add(requested);
+        }
+        return failed;
+    }
+
 }

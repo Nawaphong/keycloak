@@ -31,19 +31,31 @@ import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import javax.ws.rs.core.Response;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorageAdapter {
+public class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorageAdapter implements OpenshiftClientModel {
+    public static final Pattern ROLE_SCOPE_PATTERN = Pattern.compile("role:([^:]+):([^:!]+)(:[!])?");
     public static final Pattern SERVICE_ACCOUNT_PATTERN = Pattern.compile("system:serviceaccount:([^:]+):([^:]+)");
     protected final ServiceAccounts.ServiceAccountRepresentation serviceAccount;
     protected final OpenshiftClientStorageProvider provider;
     protected final String clientId;
+
+    public static final Set<String> ALLOWED_SCOPES = new HashSet<>();
+
+    static {
+        ALLOWED_SCOPES.add("user:info");
+        ALLOWED_SCOPES.add("user:check-access");
+    }
 
     public OpenshiftSAClientAdapter(KeycloakSession session, RealmModel realm, String clientId, ServiceAccounts.ServiceAccountRepresentation serviceAccount, OpenshiftClientStorageProvider provider) {
         super(session, realm, provider.getComponent());
@@ -254,4 +266,25 @@ public class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorageAdapt
     public boolean hasScope(RoleModel role) {
         return false;
     }
+
+    public Set<String> validateRequestedScope(List<String> requestedScopes) {
+        Set<String> failed = new HashSet<>();
+        for (String requested : requestedScopes) {
+            if (ALLOWED_SCOPES.contains(requested)) continue;
+
+            Matcher m = ROLE_SCOPE_PATTERN.matcher(requested);
+            if (!m.matches()) {
+                failed.add(requested);
+                continue;
+            }
+            // I think that it has to match namespace?  Not sure.
+            String namespace = m.group(2);
+            if (!serviceAccount.getNamespace().equals(namespace)) {
+                failed.add(requested);
+            }
+        }
+        return failed;
+    }
+
+
 }

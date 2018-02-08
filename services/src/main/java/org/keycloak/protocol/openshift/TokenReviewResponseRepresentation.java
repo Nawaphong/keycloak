@@ -123,6 +123,9 @@ public class TokenReviewResponseRepresentation implements Serializable {
         @JsonProperty("user")
         protected User user;
 
+        @JsonProperty("error")
+        protected String error;
+
         public boolean isAuthenticated() {
             return authenticated;
         }
@@ -137,6 +140,14 @@ public class TokenReviewResponseRepresentation implements Serializable {
 
         public void setUser(User user) {
             this.user = user;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        public void setError(String error) {
+            this.error = error;
         }
     }
 
@@ -183,8 +194,9 @@ public class TokenReviewResponseRepresentation implements Serializable {
         otherClaims.put(name, value);
     }
 
-    public static TokenReviewResponseRepresentation error() {
+    public static TokenReviewResponseRepresentation error(String error) {
         TokenReviewResponseRepresentation response = new TokenReviewResponseRepresentation();
+        response.getStatus().setError(error);
         return response;
     }
     public static TokenReviewResponseRepresentation success() {
