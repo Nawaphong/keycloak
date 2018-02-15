@@ -16,11 +16,15 @@
  */
 package org.keycloak.protocol.openshift.clientstorage;
 
+import org.keycloak.models.AuthenticationFlowBindings;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
@@ -28,6 +32,7 @@ import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -140,11 +145,25 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
 
     @Override
     public String getAuthenticationFlowBindingOverride(String binding) {
+        if (!AuthenticationFlowBindings.BROWSER_BINDING.equals(binding)) return null;
+        if (client.isRespondWithChallenges()) {
+            AuthenticationFlowModel model = realm.getFlowByAlias(DefaultAuthenticationFlows.OPENSHIFT_CHALLENGE_FLOW);
+            if (model != null) return model.getId();
+        }
         return null;
     }
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        if (client.isRespondWithChallenges()) {
+            AuthenticationFlowModel model = realm.getFlowByAlias(DefaultAuthenticationFlows.OPENSHIFT_CHALLENGE_FLOW);
+            if (model != null) {
+                Map<String, String> map = new HashMap<>();
+                map.put(AuthenticationFlowBindings.BROWSER_BINDING, model.getId());
+                return map;
+            }
+        }
+
         return Collections.EMPTY_MAP;
     }
 
@@ -276,5 +295,8 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
         }
         return failed;
     }
+
+
+
 
 }

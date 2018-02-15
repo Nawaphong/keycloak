@@ -16,11 +16,15 @@
  */
 package org.keycloak.protocol.openshift.clientstorage;
 
+import org.keycloak.models.AuthenticationFlowBindings;
+import org.keycloak.models.AuthenticationFlowModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientTemplateModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
 import org.keycloak.protocol.openshift.TokenReviewResponseRepresentation;
@@ -164,14 +168,27 @@ public class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorageAdapt
 
     @Override
     public String getAuthenticationFlowBindingOverride(String binding) {
+        if (!AuthenticationFlowBindings.BROWSER_BINDING.equals(binding)) return null;
+        if (serviceAccount.oauthWantChallenges()) {
+            AuthenticationFlowModel model = realm.getFlowByAlias(DefaultAuthenticationFlows.OPENSHIFT_CHALLENGE_FLOW);
+            if (model != null) return model.getId();
+        }
         return null;
     }
 
     @Override
     public Map<String, String> getAuthenticationFlowBindingOverrides() {
+        if (serviceAccount.oauthWantChallenges()) {
+            AuthenticationFlowModel model = realm.getFlowByAlias(DefaultAuthenticationFlows.OPENSHIFT_CHALLENGE_FLOW);
+            if (model != null) {
+                Map<String, String> map = new HashMap<>();
+                map.put(AuthenticationFlowBindings.BROWSER_BINDING, model.getId());
+                return map;
+            }
+        }
+
         return Collections.EMPTY_MAP;
     }
-
     @Override
     public boolean isFrontchannelLogout() {
         return false;
