@@ -315,6 +315,10 @@ public class TokenManager {
         validation.clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
+        if (refreshToken.getAuthorization() != null) {
+            validation.newToken.setAuthorization(refreshToken.getAuthorization());
+        }
+
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session, validation.userSession, validation.clientSession)
                 .accessToken(validation.newToken)
                 .generateRefreshToken();
