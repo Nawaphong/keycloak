@@ -776,6 +776,10 @@ public class TokenManager {
         boolean generateAccessTokenHash = false;
         String codeHash;
 
+        // Financial API - Part 2: Read and Write API Security Profile
+        // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+        String stateHash;
+        
         public AccessTokenResponseBuilder(RealmModel realm, ClientModel client, EventBuilder event, KeycloakSession session, UserSessionModel userSession, AuthenticatedClientSessionModel clientSession) {
             this.realm = realm;
             this.client = client;
@@ -877,6 +881,12 @@ public class TokenManager {
             return this;
         }
 
+        // Financial API - Part 2: Read and Write API Security Profile
+        // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+        public AccessTokenResponseBuilder generateStateHash(String state) {
+            stateHash = HashProvider.oidcHash(jwsAlgorithm, state);
+            return this;
+        }
 
         public AccessTokenResponse build() {
             KeyManager.ActiveRsaKey activeRsaKey = session.keys().getActiveRsaKey(realm);
@@ -912,7 +922,11 @@ public class TokenManager {
             if (codeHash != null) {
                 idToken.setCodeHash(codeHash);
             }
-
+            // Financial API - Part 2: Read and Write API Security Profile
+            // http://openid.net/specs/openid-financial-api-part-2.html#authorization-server
+            if (stateHash != null) {
+                idToken.setStateHash(stateHash);
+            }
             if (idToken != null) {
                 String encodedToken = new JWSBuilder().type(JWT).kid(activeRsaKey.getKid()).jsonContent(idToken).sign(jwsAlgorithm, activeRsaKey.getPrivateKey());
                 res.setIdToken(encodedToken);
