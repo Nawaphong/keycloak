@@ -20,11 +20,16 @@ import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import org.keycloak.json.StringListMapDeserializer;
 
 /**
  * <p>One or more resources that the resource server manages as a set of protected resources.
@@ -42,6 +47,7 @@ public class ResourceRepresentation {
     private String uri;
     private String type;
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonProperty("scopes")
     private Set<ScopeRepresentation> scopes;
 
     @JsonProperty("icon_uri")
@@ -49,10 +55,11 @@ public class ResourceRepresentation {
     private ResourceOwnerRepresentation owner;
     private Boolean ownerManagedAccess;
 
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    private List<PolicyRepresentation> policies;
-
     private String displayName;
+
+    @JsonDeserialize(using = StringListMapDeserializer.class)
+    private Map<String, List<String>> attributes;
+
     /**
      * Creates a new instance.
      *
@@ -155,14 +162,28 @@ public class ResourceRepresentation {
     }
 
     public void setUri(String uri) {
-        this.uri = uri;
+        if (uri != null && !"".equalsIgnoreCase(uri.trim())) {
+            this.uri = uri;
+        }
     }
 
     public void setType(String type) {
-        this.type = type;
+        if (type != null && !"".equalsIgnoreCase(type.trim())) {
+            this.type = type;
+        }
     }
 
     public void setScopes(Set<ScopeRepresentation> scopes) {
+        this.scopes = scopes;
+    }
+
+    /**
+     * TODO: This is a workaround to allow deserialization of UMA resource representation. Jackson 2.19+ support aliases, once we upgrade, change this.
+     *
+     * @param scopes
+     */
+    @JsonSetter("resource_scopes")
+    private void setScopesUma(Set<ScopeRepresentation> scopes) {
         this.scopes = scopes;
     }
 
@@ -174,8 +195,23 @@ public class ResourceRepresentation {
         return this.owner;
     }
 
+    @JsonProperty
     public void setOwner(ResourceOwnerRepresentation owner) {
         this.owner = owner;
+    }
+
+    @JsonIgnore
+    public void setOwner(String ownerId) {
+        if (ownerId == null) {
+            owner = null;
+            return;
+        }
+
+        if (owner == null) {
+            owner = new ResourceOwnerRepresentation();
+        }
+
+        owner.setId(ownerId);
     }
 
     public Boolean getOwnerManagedAccess() {
@@ -193,6 +229,14 @@ public class ResourceRepresentation {
         for (String scopeName : scopeNames) {
             scopes.add(new ScopeRepresentation(scopeName));
         }
+    }
+
+    public Map<String, List<String>> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Map<String, List<String>> attributes) {
+        this.attributes = attributes;
     }
 
     public boolean equals(Object o) {
