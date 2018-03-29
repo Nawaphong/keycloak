@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.openshift;
+package org.keycloak.protocol.kubernetes;
 
 import org.keycloak.RSATokenVerifier;
 import org.keycloak.common.VerificationException;
@@ -28,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.endpoints.TokenEndpoint;
-import org.keycloak.protocol.openshift.clientstorage.OpenshiftClientModel;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.Urls;
 
@@ -39,7 +38,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.security.PublicKey;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -48,8 +46,8 @@ import java.util.Set;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftTokenEndpoint extends TokenEndpoint {
-    public OpenshiftTokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
+public class KubernetesTokenEndpoint extends TokenEndpoint {
+    public KubernetesTokenEndpoint(TokenManager tokenManager, RealmModel realm, EventBuilder event) {
         super(tokenManager, realm, event);
     }
 
@@ -101,20 +99,7 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
 
         }
 
-        ClientModel client = session.realms().getClientByClientId(toIntrospect.getAudience()[0], realm);
-
-        if (client == null) {
-            event.detail(Details.REASON, "invalid audience");
-            event.error(Errors.INVALID_CLIENT);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
-
-        }
-
-        if (!(client instanceof OpenshiftClientModel)) {
-            event.detail(Details.REASON, "openshift clients allowed only");
-            event.error(Errors.INVALID_CLIENT);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
-        }
+        ClientModel client = session.realms().getClientByClientId(toIntrospect.getIssuedFor(), realm);
 
 
         TokenReviewResponseRepresentation success = TokenReviewResponseRepresentation.success();
@@ -122,23 +107,6 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
         userRep.setUid(user.getId());
         userRep.setUsername(user.getUsername());
 
-        String scopeParam = tokenManager.getRequiredOAuthScope(session, realm, toIntrospect);
-        List<String> scopes = new LinkedList<>();
-        if (scopeParam != null) {
-            for (String scope : scopeParam.split("\\s+")) {
-                scopes.add(scope);
-            }
-        }
-        Set<String> failedScopes = ((OpenshiftClientModel)client).validateRequestedScope(scopes);
-        if (failedScopes != null && !failedScopes.isEmpty()) {
-            StringBuilder builder = new StringBuilder();
-            for (String failed : failedScopes) builder.append(" ").append(failed);
-            event.detail(Details.REASON, builder.toString());
-            event.error(Errors.INVALID_SCOPE);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error(Errors.INVALID_SCOPE)).type(MediaType.APPLICATION_JSON_TYPE).build();
-
-        }
-        if (!scopes.isEmpty()) userRep.putExtra("scopes.authorization.openshift.io", scopes);
 
         // todo should scope this information to avoid leaking info
         // should only display what is allowed for client

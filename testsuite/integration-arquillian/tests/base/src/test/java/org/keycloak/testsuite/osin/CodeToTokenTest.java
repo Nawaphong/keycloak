@@ -67,7 +67,7 @@ import static org.junit.Assert.assertEquals;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Ignore
+//@Ignore
 public class CodeToTokenTest extends AbstractOpenshiftBaseTest {
 
     public static final String OPENSHIFT_OAUTH_CLIENT = "literal-oauth-client";

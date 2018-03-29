@@ -34,9 +34,18 @@ import java.util.List;
  * @version $Revision: 1 $
  */
 public abstract class AbstractOpenshiftBaseTest extends AbstractTestRealmKeycloakTest {
-    public static final String BASE_URL = "https://192.168.64.2:8443";
-    public static final String MASTER_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJteXByb2plY3QiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tbjc3MjkiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxODI5YjcxNi0wNzY5LTExZTgtOTI0NS01ZWQ0ODZlZDdkYzEiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bXlwcm9qZWN0OmtleWNsb2FrIn0.gGDHWIob4HNEbj57s_4Lm_2XCMp5DRSvUEafqfzohrcXLfoN-XMACkuwebn6EghfTB_9ITrkzhJSd3T0BbKO7l0dYchW4dRIMtz5SZs7y097Bxcl9bkPQG3wC-TkcqWgCV9PdE-dzdm8qb5c1lHd1QFBkCnX0slZ1kQd0tUIvoAf7if47YCgzvmMfsAXr88fzEZ_eMjimgTvzyudPvfsNnfQ_-0mr_dQMfVJXpFDrMSL2Fec8fxhktKgCGLdOX5d_2sqEfy1G_vAwnA2NV6CcLFailoTLoQztyvZDpsuLkMo6b3UV1sqFGwCUXkzGFnzr5yV27q4-zC-vsalSQmYPA";
+    public static final String BASE_URL = "https://192.168.238.132:8443";
+    public static final String MASTER_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJteXByb2plY3QiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tY2o0bjIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxYjg5YjQ3Ny0yZDNkLTExZTgtOWQ5MC0wMDBjMjk4MmM5YjgiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bXlwcm9qZWN0OmtleWNsb2FrIn0.kIyxRgaNz853n5CpriLG8ywSLTnq5UaKwgBXUtKCObGw5zn8Ae5Rg9VUJ_yYHHtGGjK-KVbwLs9hKYsF76P5H9QnhtYdEIgFhnrJ5VVnN4_Lhot4XIeq5BUn_p_VKf76-UTGXGlMMtDo4cf4iYw7ptI1h3iaD2W8f4zZ49esj1Z4ApLMSqHXE6iVLBTJaCwt_Mw02lNm9yk79XrujvuDGCV_fdDCLk08fedhbc_OYN-if3c8KjxP7cklrlW-itM6N6G7rjAoHuUY3OR-GF7KLdVibIdRvXtFNgqP7zp_kWKXxax8zQSDXkMzmFPGjvkAIUn7swIvLwjgb-5XDBySbw";
 
+    /*
+    $ oc create sa keycloak
+    $ oc adm policy add-cluster-role-to-user system:auth-delegator -z keycloak
+    $ oc adm policy add-cluster-role-to-user system:master -z keycloak
+    $ oc describe sa keycloak
+    # look for token and describe it
+    $ oc describe secret xxxxx-xxx
+    # copy token to MASTER_TOKEN constant above
+     */
     protected String addComponent(ComponentRepresentation component) {
         Response resp = adminClient.realm("test").components().add(component);
         resp.close();

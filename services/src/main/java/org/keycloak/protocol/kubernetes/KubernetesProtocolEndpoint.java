@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.protocol.openshift;
+package org.keycloak.protocol.kubernetes;
 
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
 import org.keycloak.events.EventBuilder;
@@ -31,8 +31,8 @@ import javax.ws.rs.core.UriInfo;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class OpenshiftProtocolEndpoint extends OIDCLoginProtocolService {
-    public OpenshiftProtocolEndpoint(RealmModel realm, EventBuilder event) {
+public class KubernetesProtocolEndpoint extends OIDCLoginProtocolService {
+    public KubernetesProtocolEndpoint(RealmModel realm, EventBuilder event) {
         super(realm, event);
     }
 
@@ -41,18 +41,17 @@ public class OpenshiftProtocolEndpoint extends OIDCLoginProtocolService {
      */
     @Path("token")
     public Object token() {
-        OpenshiftTokenEndpoint endpoint = new OpenshiftTokenEndpoint(tokenManager, realm, event);
+        KubernetesTokenEndpoint endpoint = new KubernetesTokenEndpoint(tokenManager, realm, event);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }
 
-    public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
-        UriBuilder baseUriBuilder = uriInfo.getBaseUriBuilder();
-        return tokenServiceBaseUrl(baseUriBuilder);
+    public static UriBuilder tokenReviewnUrl(UriBuilder baseUriBuilder) {
+        return tokenUrl(baseUriBuilder).path(KubernetesProtocolEndpoint.class, "tokenReview");
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriBuilder baseUriBuilder) {
-        return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + OpenshiftLoginProtocolFactory.LOGIN_PROTOCOL);
+        return baseUriBuilder.path(RealmsResource.class).path("{realm}/protocol/" + KubernetesLoginProtocolFactory.LOGIN_PROTOCOL);
     }
 
     public static UriBuilder authUrl(UriInfo uriInfo) {
@@ -70,22 +69,9 @@ public class OpenshiftProtocolEndpoint extends OIDCLoginProtocolService {
         return uriBuilder.path(OIDCLoginProtocolService.class, "token");
     }
 
-    public static UriBuilder certsUrl(UriBuilder baseUriBuilder) {
-        UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
-        return uriBuilder.path(OIDCLoginProtocolService.class, "certs");
-    }
-
     public static UriBuilder userInfoUrl(UriBuilder baseUriBuilder) {
         UriBuilder uriBuilder = tokenServiceBaseUrl(baseUriBuilder);
         return uriBuilder.path(OIDCLoginProtocolService.class, "issueUserInfo");
-    }
-
-    public static UriBuilder tokenIntrospectionUrl(UriBuilder baseUriBuilder) {
-        return tokenUrl(baseUriBuilder).path(TokenEndpoint.class, "introspect");
-    }
-
-    public static UriBuilder tokenReviewnUrl(UriBuilder baseUriBuilder) {
-        return tokenUrl(baseUriBuilder).path(OpenshiftTokenEndpoint.class, "tokenReview");
     }
 
     public static UriBuilder logoutUrl(UriInfo uriInfo) {
