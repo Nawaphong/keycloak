@@ -51,6 +51,7 @@ public class DefaultAuthenticationFlows {
 
     public static final String IDP_REVIEW_PROFILE_CONFIG_ALIAS = "review profile config";
     public static final String IDP_CREATE_UNIQUE_USER_CONFIG_ALIAS = "create unique user config";
+    public static final String OPENSHIFT_CHALLENGE_FLOW_DESCRIPTION = "openshift flow for clients requiring challenge mode";
 
     public static void addFlows(RealmModel realm) {
         if (realm.getFlowByAlias(BROWSER_FLOW) == null) browserFlow(realm);
@@ -256,12 +257,11 @@ public class DefaultAuthenticationFlows {
     public static void openshiftChallengeFlow(RealmModel realm) {
         AuthenticationFlowModel challengeFlow = new AuthenticationFlowModel();
         challengeFlow.setAlias(OPENSHIFT_CHALLENGE_FLOW);
-        challengeFlow.setDescription("openshift flow for clients requiring challenge mode");
+        challengeFlow.setDescription(OPENSHIFT_CHALLENGE_FLOW_DESCRIPTION);
         challengeFlow.setProviderId("basic-flow");
         challengeFlow.setTopLevel(true);
         challengeFlow.setBuiltIn(true);
         challengeFlow = realm.addAuthenticationFlow(challengeFlow);
-        realm.setBrowserFlow(challengeFlow);
 
         AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
         execution.setParentFlow(challengeFlow.getId());
@@ -294,8 +294,6 @@ public class DefaultAuthenticationFlows {
         execution.setPriority(40);
         execution.setAuthenticatorFlow(false);
         realm.addAuthenticatorExecution(execution);
-
-
     }
 
     public static void browserFlow(RealmModel realm, boolean migrate) {

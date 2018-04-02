@@ -14,30 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.osin;
+package org.keycloak.testsuite.openshift;
 
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
-import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.openshift.OpenshiftProtocolEndpoint;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
 import org.keycloak.protocol.openshift.TokenReviewResponseRepresentation;
@@ -46,25 +38,16 @@ import org.keycloak.protocol.openshift.connections.rest.api.v1.Secrets;
 import org.keycloak.protocol.openshift.connections.rest.api.v1.ServiceAccounts;
 import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 import org.keycloak.representations.AccessTokenResponse;
-import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
-import org.keycloak.testsuite.pages.AppPage;
-import org.keycloak.testsuite.pages.ErrorPage;
-import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
-import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
-import org.openqa.selenium.By;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Form;
-import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.util.List;
@@ -122,7 +105,7 @@ public class TokenReviewEndpointTest extends AbstractOpenshiftBaseTest {
     @Before
     public void createClients() throws Exception {
         if (sa_token != null) return;
-        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        OpenshiftClient client = createOpenshiftClient();
 
         OAuthClients.OAuthClientRepresentation rep = OAuthClients.OAuthClientRepresentation.create();
         // with literal scope restriction

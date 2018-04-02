@@ -14,10 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.osin;
+package org.keycloak.testsuite.openshift;
 
 import org.junit.Assert;
-import org.junit.Ignore;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
 import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
@@ -28,6 +29,7 @@ import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import java.io.FileInputStream;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -36,10 +38,17 @@ import javax.ws.rs.core.Response;
 //@Ignore
 public class OpenshiftClientTest {
 
+    @BeforeClass
+    public static void loadConfig() throws Exception {
+        Assume.assumeTrue(System.getProperties().containsKey(AbstractOpenshiftBaseTest.OPENSHIFT_CONFIG));
+        AbstractOpenshiftBaseTest.config.load(new FileInputStream(System.getProperty(AbstractOpenshiftBaseTest.OPENSHIFT_CONFIG)));
+    }
+
+
     @Test
     public void testServiceAccount() throws Exception {
 
-        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        OpenshiftClient client = AbstractOpenshiftBaseTest.createOpenshiftClient();
         Namespace myproject = client.api().namespace("myproject");
 
         // test not found
@@ -95,8 +104,8 @@ public class OpenshiftClientTest {
 
     @Test
     public void testTokenReview() throws Exception {
-        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
-        TokenReviewRequestRepresentation request = TokenReviewRequestRepresentation.create(AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        OpenshiftClient client = AbstractOpenshiftBaseTest.createOpenshiftClient();
+        TokenReviewRequestRepresentation request = TokenReviewRequestRepresentation.create(AbstractOpenshiftBaseTest.getMasterToken());
 
         //TokenReviewResponseRepresentation review = client.apis().kubernetesAuthentication("v1beta1").tokenReview().review(request);
         Response response = client.apis().kubernetesAuthentication().tokenReview().review(request);
@@ -107,7 +116,7 @@ public class OpenshiftClientTest {
     }
     @Test
     public void testOAuthClients() throws Exception {
-        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        OpenshiftClient client = AbstractOpenshiftBaseTest.createOpenshiftClient();
 
         OAuthClients.OAuthClientRepresentation rep = OAuthClients.OAuthClientRepresentation.create();
         // with literal scope restriction

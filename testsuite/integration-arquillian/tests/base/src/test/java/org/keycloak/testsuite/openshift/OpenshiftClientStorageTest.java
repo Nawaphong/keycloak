@@ -14,13 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.osin;
+package org.keycloak.testsuite.openshift;
 
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -74,7 +73,7 @@ public class OpenshiftClientStorageTest extends AbstractOpenshiftBaseTest {
     @Before
     public void createClients() throws Exception {
         if (sa_token != null) return;
-        OpenshiftClient client = OpenshiftClient.instance(AbstractOpenshiftBaseTest.BASE_URL, AbstractOpenshiftBaseTest.MASTER_TOKEN);
+        OpenshiftClient client = AbstractOpenshiftBaseTest.createOpenshiftClient();
 
         OAuthClients.OAuthClientRepresentation rep = OAuthClients.OAuthClientRepresentation.create();
         // with literal scope restriction

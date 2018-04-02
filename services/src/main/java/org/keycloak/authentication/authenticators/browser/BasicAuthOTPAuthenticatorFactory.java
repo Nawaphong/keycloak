@@ -73,7 +73,7 @@ public class BasicAuthOTPAuthenticatorFactory implements AuthenticatorFactory {
         return false;
     }
     public static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
-            AuthenticationExecutionModel.Requirement.REQUIRED
+            AuthenticationExecutionModel.Requirement.REQUIRED, AuthenticationExecutionModel.Requirement.DISABLED
     };
 
     @Override
@@ -88,7 +88,7 @@ public class BasicAuthOTPAuthenticatorFactory implements AuthenticatorFactory {
 
     @Override
     public String getHelpText() {
-        return "Basic auth challenge with OTP.  Password param should contain a combination of password + otp.  Realm's OTP policy is used to determine how to parse this.  This SHOULD NOT BE USED in conjection with regular basic auth provider.  ";
+        return "Basic auth challenge with OTP.  Password param should contain a combination of password + otp.  Realm's OTP policy is used to determine how to parse this.  This SHOULD NOT BE USED in conjection with regular basic auth provider.";
     }
 
     @Override

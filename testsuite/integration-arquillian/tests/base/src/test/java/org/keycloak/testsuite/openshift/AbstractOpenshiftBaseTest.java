@@ -14,29 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.testsuite.osin;
+package org.keycloak.testsuite.openshift;
 
+import org.junit.Assume;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.protocol.openshift.clientstorage.OpenshiftClientStorageProviderFactory;
+import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 
 import javax.ws.rs.core.Response;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
 public abstract class AbstractOpenshiftBaseTest extends AbstractTestRealmKeycloakTest {
-    public static final String BASE_URL = "https://192.168.238.132:8443";
-    public static final String MASTER_TOKEN = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJteXByb2plY3QiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tY2o0bjIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIxYjg5YjQ3Ny0yZDNkLTExZTgtOWQ5MC0wMDBjMjk4MmM5YjgiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bXlwcm9qZWN0OmtleWNsb2FrIn0.kIyxRgaNz853n5CpriLG8ywSLTnq5UaKwgBXUtKCObGw5zn8Ae5Rg9VUJ_yYHHtGGjK-KVbwLs9hKYsF76P5H9QnhtYdEIgFhnrJ5VVnN4_Lhot4XIeq5BUn_p_VKf76-UTGXGlMMtDo4cf4iYw7ptI1h3iaD2W8f4zZ49esj1Z4ApLMSqHXE6iVLBTJaCwt_Mw02lNm9yk79XrujvuDGCV_fdDCLk08fedhbc_OYN-if3c8KjxP7cklrlW-itM6N6G7rjAoHuUY3OR-GF7KLdVibIdRvXtFNgqP7zp_kWKXxax8zQSDXkMzmFPGjvkAIUn7swIvLwjgb-5XDBySbw";
-
     /*
     $ oc create sa keycloak
     $ oc adm policy add-cluster-role-to-user system:auth-delegator -z keycloak
@@ -63,9 +65,33 @@ public abstract class AbstractOpenshiftBaseTest extends AbstractTestRealmKeycloa
         provider.setProviderId(OpenshiftClientStorageProviderFactory.PROVIDER_ID);
         provider.setProviderType(ClientStorageProvider.class.getName());
         provider.setConfig(new MultivaluedHashMap<>());
-        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.ACCESS_TOKEN, MASTER_TOKEN);
-        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.OPENSHIFT_URI, BASE_URL);
+        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.ACCESS_TOKEN, getMasterToken());
+        provider.getConfig().putSingle(OpenshiftClientStorageProviderFactory.OPENSHIFT_URI, getOpenshiftUrl());
 
         addComponent(provider);
     }
+
+    public static Properties config = new Properties();
+
+    public static final String OPENSHIFT_CONFIG = "openshift.config";
+
+    @BeforeClass
+    public static void loadConfig() throws Exception {
+        Assume.assumeTrue(System.getProperties().containsKey(OPENSHIFT_CONFIG));
+        config.load(new FileInputStream(System.getProperty(OPENSHIFT_CONFIG)));
+    }
+
+    public static String getMasterToken() {
+        return config.getProperty("master_token");
+    }
+
+    public static String getOpenshiftUrl() {
+        return config.getProperty("openshift_url");
+    }
+
+    public static OpenshiftClient createOpenshiftClient() {
+        return OpenshiftClient.instance(AbstractOpenshiftBaseTest.getOpenshiftUrl(), AbstractOpenshiftBaseTest.getMasterToken());
+    }
+
+
 }
