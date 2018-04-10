@@ -43,7 +43,7 @@ import java.util.Set;
  */
 public class OpenshiftLoginProtocolFactory extends OIDCLoginProtocolFactory{
     private static final Logger logger = Logger.getLogger(OpenshiftLoginProtocolFactory.class);
-    public static final String LOGIN_PROTOCOL = "osin";
+    public static final String LOGIN_PROTOCOL = "openshift";
 
     @Override
     public LoginProtocol create(KeycloakSession session) {

@@ -73,13 +73,29 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
         return true;
     }
 
+    private static Set<String> origins = new HashSet<>();
+    static {
+        origins.add("+");
+
+    }
+
     @Override
     public Set<String> getWebOrigins() {
-        return Collections.EMPTY_SET;
+        return origins;
     }
 
     @Override
     public Set<String> getRedirectUris() {
+        if (client.getRedirectURIs() != null) {
+            Set<String> newSet = new HashSet<>();
+            for (String uri : client.getRedirectURIs()) {
+                if (!uri.endsWith("/")) uri += "/";
+                uri += "*";
+                newSet.add(uri);
+            }
+            return newSet;
+        }
+
         return client.getRedirectURIs();
     }
 
@@ -174,7 +190,7 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
 
     @Override
     public boolean isPublicClient() {
-        return false;
+        return client.getSecret() == null;
     }
 
     @Override
@@ -266,6 +282,7 @@ public class OpenshiftOAuthClientAdapter extends AbstractReadOnlyClientStorageAd
     public Set<String> validateRequestedScope(List<String> requestedScopes) {
         Set<String> failed = new HashSet<>();
         for (String requested : requestedScopes) {
+            if (requested.equals("openid")) continue;
             if (client.getLiteralScopeRestrictions() != null && client.getLiteralScopeRestrictions().contains(requested)) continue;
             if (client.getClusterRoleRestrictions() == null || client.getClusterRoleRestrictions().isEmpty()) {
                 failed.add(requested);

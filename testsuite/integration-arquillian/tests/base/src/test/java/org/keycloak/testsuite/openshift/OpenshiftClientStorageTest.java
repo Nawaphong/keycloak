@@ -24,6 +24,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.authentication.requiredactions.TermsAndConditions;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.models.*;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.protocol.openshift.OpenshiftProtocolEndpoint;
 import org.keycloak.protocol.openshift.TokenReviewRequestRepresentation;
 import org.keycloak.protocol.openshift.connections.rest.OpenshiftClient;
@@ -32,7 +37,14 @@ import org.keycloak.protocol.openshift.connections.rest.api.v1.ServiceAccounts;
 import org.keycloak.protocol.openshift.connections.rest.apis.oauth.OAuthClients;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.authorization.ClientPolicyRepresentation;
+import org.keycloak.services.resources.admin.AuthenticationManagementResource;
+import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
+import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
+import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.runonserver.RunOnServerDeployment;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.util.BasicAuthHelper;
@@ -44,6 +56,10 @@ import javax.ws.rs.core.Form;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
+
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
 
 import static org.junit.Assert.assertEquals;
 
@@ -123,6 +139,25 @@ public class OpenshiftClientStorageTest extends AbstractOpenshiftBaseTest {
 
 
 
+    }
+
+    //@Test
+    public void testServer() throws Exception {
+        testingClient.server().run(session -> {
+                    RealmModel realm = session.realms().getRealmByName("test");
+
+                    ClientModel client = session.realms().getClientByClientId("kcinit", realm);
+                    if (client != null) {
+                        return;
+                    }
+
+                    ClientModel kcinit = realm.addClient("kcinit");
+                    kcinit.setEnabled(true);
+                    kcinit.addRedirectUri("http://localhost:*");
+                    kcinit.setPublicClient(true);
+                });
+
+        Thread.sleep(10000000000000l);
     }
 
     @Test

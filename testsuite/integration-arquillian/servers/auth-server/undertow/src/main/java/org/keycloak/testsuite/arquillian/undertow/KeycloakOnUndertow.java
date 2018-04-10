@@ -49,6 +49,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.KeycloakServer;
 import org.keycloak.util.JsonSerialization;
 
+import javax.net.ssl.SSLContext;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletException;
 import java.io.IOException;
@@ -177,10 +178,28 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
         if (undertow == null) {
             undertow = new UndertowJaxrsServer();
         }
-        undertow.start(Undertow.builder()
-                        .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
-                        .setWorkerThreads(configuration.getWorkerThreads())
-                        .setIoThreads(configuration.getWorkerThreads() / 8)
+        Undertow.Builder builder = Undertow.builder();
+        if (System.getProperty("keycloak.port.https") != null) {
+            try {
+                SSLContext sslContext = null;
+                if (System.getProperty("keycloak.https.key") != null) {
+                    String keyfile = System.getProperty("keycloak.https.key");
+                    String crtfile = System.getProperty("keycloak.https.crt");
+                    sslContext = SslUtils.fromPems(keyfile, crtfile);
+                } else {
+                    sslContext = SslUtils.generateLocalhostContext();
+                }
+                builder.addHttpsListener(Integer.valueOf(System.getProperty("keycloak.port.https")),
+                        configuration.getBindAddress(),
+                        sslContext);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        undertow.start(builder
+                .addHttpListener(configuration.getBindHttpPort(), configuration.getBindAddress())
+                .setWorkerThreads(configuration.getWorkerThreads())
+                .setIoThreads(configuration.getWorkerThreads() / 8)
         );
 
         if (configuration.getRoute() != null) {

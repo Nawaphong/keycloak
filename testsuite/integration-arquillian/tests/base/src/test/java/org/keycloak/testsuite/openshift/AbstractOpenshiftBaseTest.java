@@ -32,6 +32,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -79,6 +80,9 @@ public abstract class AbstractOpenshiftBaseTest extends AbstractTestRealmKeycloa
     public static void loadConfig() throws Exception {
         Assume.assumeTrue(System.getProperties().containsKey(OPENSHIFT_CONFIG));
         config.load(new FileInputStream(System.getProperty(OPENSHIFT_CONFIG)));
+        //config.put("master_token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJvcGVuc2hpZnQtd2ViLWNvbnNvbGUiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tcHFmcWQiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiI4MmU5ZTE0YS0zYWRjLTExZTgtYmZkMy0wMDBjMjk4MmM5YjgiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6b3BlbnNoaWZ0LXdlYi1jb25zb2xlOmtleWNsb2FrIn0.MP84QI0HVg6Xnk1sZhmzcXbDoN0mAdFZm061_tdyjBlqR34oKKHeZ_4q_kja7xZnmg3t0a7ZZ2mW0mafVVXwjiDucdYMkdJ5vEmi291kNz3Qut9hS8dqWBY0tt4hnwzjDr_4O6mfO66CFdjLs_9uJfqXFQpH8xi4RI98fPAqMAiqQ69tt9SVkt7ozTJI-qCSADjFlZeWnWSGP8ruX5lI9URCSlpfSiDdZeXzU6WQUh7pdjbq2mp64azfg8Nv5RfQQ5w9ZFMEhFqoJNelO5UVIN6JdpjrpLbsm5TGDIg68_RhCcdWY_lGDjE-gE2_qxulIfbKHyruKxU5uolgLaCIAw");
+        //config.put("master_token", "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJteXByb2plY3QiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlY3JldC5uYW1lIjoia2V5Y2xvYWstdG9rZW4tY2M4cWwiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC5uYW1lIjoia2V5Y2xvYWsiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIzMzg0NTU3OS0zYTg5LTExZTgtOGQ2Mi0wMDBjMjk4MmM5YjgiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6bXlwcm9qZWN0OmtleWNsb2FrIn0.KDsjSh5Mai43Q9oj9Zeokz6AphGHEV9TdhTK9y7qj-F976gUhQw7dmNOAs22m7CPjbgpZHlom6KZD0-yUP4_ZgE6r6kKw_lN_8YvM_4sMG_bZNrl9y5nk5tIrRsIexQ-inXo9AxnlMPTGClZTfePMOmoP6Ubz9OMvxZLL066kKNVRhoE0yE-Nv1o1GHnnYmx9q-LEnL5IxSmI1_fT28bceDgisxhopVAoQoFX7T5TmvBnMoZwJ6ba3ZQm7z0ISIf-ur1W77-NbYLOx9lepiT4si5OSO9qdzfUQjBc6YL8-ueU_QrmrftJYwc9tvvLOo2b0jndd6N1ApNnyx1niSdaA");
+        //config.put("openshift_url", "https://192.168.238.132:8443");
     }
 
     public static String getMasterToken() {
@@ -92,6 +96,8 @@ public abstract class AbstractOpenshiftBaseTest extends AbstractTestRealmKeycloa
     public static OpenshiftClient createOpenshiftClient() {
         return OpenshiftClient.instance(AbstractOpenshiftBaseTest.getOpenshiftUrl(), AbstractOpenshiftBaseTest.getMasterToken());
     }
+
+
 
 
 }

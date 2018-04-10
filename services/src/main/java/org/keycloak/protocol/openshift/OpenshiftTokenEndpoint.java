@@ -104,18 +104,11 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
         ClientModel client = session.realms().getClientByClientId(toIntrospect.getAudience()[0], realm);
 
         if (client == null) {
-            event.detail(Details.REASON, "invalid audience");
+            event.detail(Details.REASON,    "invalid audience");
             event.error(Errors.INVALID_CLIENT);
             return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
 
         }
-
-        if (!(client instanceof OpenshiftClientModel)) {
-            event.detail(Details.REASON, "openshift clients allowed only");
-            event.error(Errors.INVALID_CLIENT);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error("invalid client")).type(MediaType.APPLICATION_JSON_TYPE).build();
-        }
-
 
         TokenReviewResponseRepresentation success = TokenReviewResponseRepresentation.success();
         TokenReviewResponseRepresentation.Status.User userRep = success.getStatus().getUser();
@@ -129,16 +122,18 @@ public class OpenshiftTokenEndpoint extends TokenEndpoint {
                 scopes.add(scope);
             }
         }
-        Set<String> failedScopes = ((OpenshiftClientModel)client).validateRequestedScope(scopes);
-        if (failedScopes != null && !failedScopes.isEmpty()) {
-            StringBuilder builder = new StringBuilder();
-            for (String failed : failedScopes) builder.append(" ").append(failed);
-            event.detail(Details.REASON, builder.toString());
-            event.error(Errors.INVALID_SCOPE);
-            return Response.status(401).entity(TokenReviewResponseRepresentation.error(Errors.INVALID_SCOPE)).type(MediaType.APPLICATION_JSON_TYPE).build();
+        if (client instanceof OpenshiftClientModel) {
+            Set<String> failedScopes = ((OpenshiftClientModel)client).validateRequestedScope(scopes);
+            if (failedScopes != null && !failedScopes.isEmpty()) {
+                StringBuilder builder = new StringBuilder();
+                for (String failed : failedScopes) builder.append(" ").append(failed);
+                event.detail(Details.REASON, builder.toString());
+                event.error(Errors.INVALID_SCOPE);
+                return Response.status(401).entity(TokenReviewResponseRepresentation.error(Errors.INVALID_SCOPE)).type(MediaType.APPLICATION_JSON_TYPE).build();
 
+            }
+            if (!scopes.isEmpty()) userRep.putExtra("scopes.authorization.openshift.io", scopes);
         }
-        if (!scopes.isEmpty()) userRep.putExtra("scopes.authorization.openshift.io", scopes);
 
         // todo should scope this information to avoid leaking info
         // should only display what is allowed for client
